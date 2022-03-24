@@ -1,7 +1,15 @@
 ﻿namespace ItemChangerDataLoader
 {
+    public enum BackupRandoType
+    {
+        Manual,
+        Automatic,
+        None
+    }
+
     public class GlobalSettings
     {
-        public bool BackupNewRandoSaves = true;
+
+        public BackupRandoType BackupNewRandoSaves = BackupRandoType.Manual;
     }
 }

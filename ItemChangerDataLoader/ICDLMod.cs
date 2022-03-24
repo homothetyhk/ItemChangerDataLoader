@@ -6,10 +6,11 @@ using RandomizerMod.RC;
 using System.Reflection;
 using ICSettings = ItemChanger.Settings;
 using static RandomizerMod.Localization;
+using UnityEngine;
 
 namespace ItemChangerDataLoader
 {
-    public class ICDLMod : Mod, IGlobalSettings<GlobalSettings>, IMenuMod
+    public class ICDLMod : Mod, IGlobalSettings<GlobalSettings>, ICustomMenuMod
     {
         public ICDLMod() : base("ICDL Mod") { }
         public override string GetVersion() => Version;
@@ -34,27 +35,44 @@ namespace ItemChangerDataLoader
                 return;
             }
 
-            if (GlobalSettings.BackupNewRandoSaves && RandomizerMod.RandomizerMod.IsRandoSave)
+            if (RandomizerMod.RandomizerMod.IsRandoSave)
             {
-                CreateRandoBackup();
+                CreateRandoBackup(GlobalSettings.BackupNewRandoSaves);
             }
         }
 
-        private void CreateRandoBackup()
+        private void CreateRandoBackup(BackupRandoType type)
         {
+            if (type == BackupRandoType.None) return;
+
             ICSettings s = ItemChanger.Internal.Ref.Settings;
             RandoModContext ctx = RandomizerMod.RandomizerMod.RS.Context;
+            string stamp = DateTime.Now.ToString("yyyy-M-dd--HH-mm-ss") + " - " + ctx.GenerationSettings.Seed.ToString();
+            string path = type switch
+            {
+                BackupRandoType.Manual => Path.Combine(TempDirectory, $"user{GameManager.instance.profileID}", stamp),
+                _ => Path.Combine(PastRandoDirectory, stamp)
+            };
 
             try
             {
-                DirectoryInfo di = Directory.CreateDirectory(Path.Combine(ModDirectory, "Past Randos", ctx.GenerationSettings.Seed.ToString() + " - " + DateTime.Now.ToString("yyyy-M-dd--HH-mm-ss")));
+                if (type == BackupRandoType.Manual)
+                {
+                    string userPath = Path.Combine(TempDirectory, $"user{GameManager.instance.profileID}");
+                    if (Directory.Exists(userPath))
+                    {
+                        Directory.Delete(userPath, true);
+                    }
+                }
+
+                DirectoryInfo di = Directory.CreateDirectory(path);
                 string dir = di.FullName;
                 JsonUtil.Serialize(Path.Combine(dir, "ic.json"), s);
                 JsonUtil.Serialize(Path.Combine(dir, "ctx.json"), ctx);
                 JsonUtil.Serialize(Path.Combine(dir, "pack.json"), new ICPack
                 {
                     Name = ctx.GenerationSettings.Seed.ToString(),
-                    Author = "RandomizerMod " + RandomizerMod.RandomizerMod.Version,
+                    Author = $"RandomizerMod {RandomizerMod.RandomizerMod.Version}, {DateTime.Now:yyyy-M-dd}",
                     Description = string.Empty,
                     SupportsRandoTracking = true,
                 });
@@ -75,28 +93,33 @@ namespace ItemChangerDataLoader
             return GlobalSettings;
         }
 
-        bool IMenuMod.ToggleButtonInsideMenu => false;
+        bool ICustomMenuMod.ToggleButtonInsideMenu => throw new NotImplementedException();
 
-        List<IMenuMod.MenuEntry> IMenuMod.GetMenuData(IMenuMod.MenuEntry? toggleButtonEntry)
+        MenuScreen ICustomMenuMod.GetMenuScreen(MenuScreen modListMenu, ModToggleDelegates? toggleDelegates)
         {
-            string[] bools = new[]
-            {
-                Localize("False"), Localize("True")
-            };
-
-            return new List<IMenuMod.MenuEntry>
-            {
-                new(Localize("Backup New Rando Saves"), bools, "", i => GlobalSettings.BackupNewRandoSaves = i == 1, () => GlobalSettings.BackupNewRandoSaves ? 1 : 0)
-            };
+            return ModMenu.GetMenuScreen(modListMenu);
         }
 
-        public static string ModDirectory { get; }
         public static string Version { get; }
+
+        public static string ICDLDirectory { get; }
+        public static string TempDirectory { get; }
+        public static string PastRandoDirectory { get; }
 
         static ICDLMod()
         {
             Assembly a = typeof(ICDLMod).Assembly;
-            ModDirectory = Path.GetDirectoryName(a.Location);
+            ICDLDirectory = Path.Combine(Application.persistentDataPath, "ICDL");
+            TempDirectory = Path.Combine(ICDLDirectory, "Temp");
+            PastRandoDirectory = Path.Combine(ICDLDirectory, "Past Randos");
+            try
+            {
+                Directory.CreateDirectory(ICDLDirectory);
+                Directory.CreateDirectory(TempDirectory);
+                Directory.CreateDirectory(PastRandoDirectory);
+            }
+            catch (Exception) { }
+
 
             Version v = a.GetName().Version;
             Version = $"{v.Major}.{v.Minor}.{v.Build}";

@@ -85,9 +85,9 @@ namespace ItemChangerDataLoader
             startPage = new(title + " Start Menu", selectPage);
             errorPage = new(title + " Error Menu", selectPage);
             List<ICPack> packs = new();
-            if (Directory.Exists(Path.Combine(ICDLMod.ModDirectory, directoryName)))
+            if (Directory.Exists(Path.Combine(ICDLMod.ICDLDirectory, directoryName)))
             {
-                foreach (string dir in Directory.EnumerateDirectories(Path.Combine(ICDLMod.ModDirectory, directoryName)))
+                foreach (string dir in Directory.EnumerateDirectories(Path.Combine(ICDLMod.ICDLDirectory, directoryName)))
                 {
                     string path = Path.Combine(dir, "pack.json");
                     if (File.Exists(path))
