@@ -1,23 +1,21 @@
-﻿using Modding;
+﻿using ItemChanger;
 using MenuChanger;
-using ItemChanger;
-using RandomizerMod;
+using Modding;
 using RandomizerMod.RC;
 using System.Reflection;
-using ICSettings = ItemChanger.Settings;
-using static RandomizerMod.Localization;
 using UnityEngine;
+using ICSettings = ItemChanger.Settings;
 
 namespace ItemChangerDataLoader
 {
-    public class ICDLMod : Mod, IGlobalSettings<GlobalSettings>, ICustomMenuMod
+    public class ICDLMod : Mod, ILocalSettings<LocalSettings>, IGlobalSettings<GlobalSettings>, ICustomMenuMod
     {
         public ICDLMod() : base("ICDL Mod") { }
         public override string GetVersion() => Version;
+        public override int LoadPriority() => int.MaxValue - 50;
         public static ICDLMod Instance { get; private set; }
         public static GlobalSettings GlobalSettings { get; private set; } = new();
-
-        internal static bool icdlStartGame;
+        public static LocalSettings LocalSettings { get; private set; } = new();
 
         public override void Initialize()
         {
@@ -29,9 +27,8 @@ namespace ItemChangerDataLoader
 
         private void BeforeStartNewGame()
         {
-            if (icdlStartGame) // don't backup a backup
+            if (LocalSettings.IsICDLSave) // don't backup a backup
             {
-                icdlStartGame = false;
                 return;
             }
 
@@ -98,6 +95,16 @@ namespace ItemChangerDataLoader
         MenuScreen ICustomMenuMod.GetMenuScreen(MenuScreen modListMenu, ModToggleDelegates? toggleDelegates)
         {
             return ModMenu.GetMenuScreen(modListMenu);
+        }
+
+        void ILocalSettings<LocalSettings>.OnLoadLocal(LocalSettings s)
+        {
+            LocalSettings = s ?? new();
+        }
+
+        LocalSettings ILocalSettings<LocalSettings>.OnSaveLocal()
+        {
+            return LocalSettings;
         }
 
         public static string Version { get; }

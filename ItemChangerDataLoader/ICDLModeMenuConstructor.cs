@@ -281,7 +281,7 @@ namespace ItemChangerDataLoader
                 return;
             }
 
-            ICDLMod.icdlStartGame = true;
+            ICDLMod.LocalSettings.IsICDLSave = true;
             GameManager.instance.StartNewGame();
         }
 
