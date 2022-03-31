@@ -61,7 +61,17 @@ namespace ItemChangerDataLoader
                         ICDLMod.Instance.LogError($"Error opening ICDL directory:\n{e}");
                     }
                 });
-
+            mmsb.AddButton(
+                Localize("Reload Main Menu"),
+                Localize("Can only be used from main menu."),
+                () =>
+                {
+                    if (GameManager.instance.sceneName == ItemChanger.SceneNames.Menu_Title)
+                    {
+                        InputHandler.Instance.StopUIInput();
+                        UIManager.instance.StartCoroutine(GameManager.instance.ReturnToMainMenu(GameManager.ReturnToMainMenuSaveModes.DontSave));
+                    }
+                });
             return mmsb.CreateMenuScreen();
         }
     }

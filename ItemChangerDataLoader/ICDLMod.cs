@@ -12,7 +12,7 @@ namespace ItemChangerDataLoader
     {
         public ICDLMod() : base("ICDL Mod") { }
         public override string GetVersion() => Version;
-        public override int LoadPriority() => int.MaxValue - 50;
+        public override int LoadPriority() => 9950; // a little less than MenuChanger
         public static ICDLMod Instance { get; private set; }
         public static GlobalSettings GlobalSettings { get; private set; } = new();
         public static LocalSettings LocalSettings { get; private set; } = new();

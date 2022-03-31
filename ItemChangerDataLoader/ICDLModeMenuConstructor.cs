@@ -263,6 +263,9 @@ namespace ItemChangerDataLoader
             LogManager.Write(tw => JsonUtil.Serialize(tw, ctx), "RawSpoiler.json");
             RandomizerMod.RandomizerMod.RS.TrackerData.Setup(ctx.GenerationSettings, ctx);
             RandomizerMod.RandomizerMod.RS.TrackerDataWithoutSequenceBreaks.Setup(ctx.GenerationSettings, ctx);
+            ((MenuChangerMod)typeof(MenuChangerMod).GetProperty("instance", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+                .GetValue(null))
+                .Settings.resumeKey = "Randomizer";
         }
 
         public void StartGame()
