@@ -23,32 +23,45 @@ namespace ItemChangerDataLoader
             this.directoryName = directoryName;
         }
 
-        ICDLMenu instance;
-        string title;
-        string directoryName;
+        public static ICDLMenu Menu { get; private set; }
+        internal static bool Finished { get; private set; }
+        readonly string title;
+        readonly string directoryName;
 
         public override void OnEnterMainMenu(MenuPage modeMenu)
         {
-            instance = new(modeMenu, title, directoryName);
+            Menu = new(modeMenu, title, directoryName);
+            foreach (var entry in ICDLMenuAPI.startOverrides)
+            {
+                try
+                {
+                    entry.ConstructionHandler(Menu.StartOptionsPage);
+                }
+                catch (Exception e)
+                {
+                    ICDLMod.Instance.LogError($"Error constructing external menu:\n{e}");
+                }
+            }
+            Finished = true;
         }
 
         public override void OnExitMainMenu()
         {
-            instance = null;
+            Menu = null;
         }
 
         public override bool TryGetModeButton(MenuPage modeMenu, out BigButton button)
         {
-            if (instance.packSelector.Items.Count > 0)
+            if (Menu.packSelector.Items.Count > 0)
             {
-                button = instance.modeButton;
+                button = Menu.modeButton;
                 button.Show();
                 return true;
             }
             else
             {
                 button = null;
-                instance.modeButton.Hide();
+                Menu.modeButton.Hide();
                 return false;
             }
         }
@@ -56,24 +69,26 @@ namespace ItemChangerDataLoader
 
     public class ICDLMenu
     {
-        public BigButton modeButton;
-
-        MenuPage selectPage;
+        public readonly BigButton modeButton;
+        readonly MenuPage selectPage;
         public MultiGridItemPanel packSelector;
-
-        MenuPage startPage;
-        MenuLabel titleLabel;
-        MenuLabel descriptionLabel;
-        MenuLabel[] hashLabels;
+        readonly MenuPage startPage;
+        readonly MenuLabel titleLabel;
+        readonly MenuLabel descriptionLabel;
+        readonly MenuLabel[] hashLabels;
         const int hashLength = 5;
-        VerticalItemPanel hashPanel;
-        SmallButton copyHashButton;
-        BigButton startButton;
+        readonly VerticalItemPanel hashPanel;
+        readonly SmallButton copyHashButton;
+        readonly BigButton startButton;
+        readonly BigButton proceedButton;
+        readonly MenuPage errorPage;
+        readonly MenuLabel errorLabel;
+        readonly SmallButton modlogButton;
+        readonly SmallButton openFolderButton;
 
-        MenuPage errorPage;
-        MenuLabel errorLabel;
-        SmallButton modlogButton;
-        SmallButton openFolderButton;
+        public readonly MenuPage StartOptionsPage;
+        readonly MultiGridItemPanel startOptionsPanel;
+        readonly BigButton redirectStartButton;
 
         StartData data;
 
@@ -84,6 +99,8 @@ namespace ItemChangerDataLoader
             modeButton.AddHideAndShowEvent(selectPage);
             startPage = new(title + " Start Menu", selectPage);
             errorPage = new(title + " Error Menu", selectPage);
+            StartOptionsPage = new(title + " Start Options Menu", startPage);
+
             List<ICPack> packs = new();
             if (Directory.Exists(Path.Combine(ICDLMod.ICDLDirectory, directoryName)))
             {
@@ -100,14 +117,16 @@ namespace ItemChangerDataLoader
                     }
                 }
             }
-            
 
             packSelector = new(selectPage, 5, 3, 150f, 650f, new Vector2(0, 300), packs.Select(p => CreatePackButton(p)).ToArray());
 
             startButton = new(startPage, Localize("Start Game"));
             startButton.OnClick += StartGame;
             startButton.MoveTo(new(0f, -300f));
-            startPage.AddToNavigationControl(startButton);
+
+            proceedButton = new(startPage, Localize("Proceed"));
+            proceedButton.AddHideAndShowEvent(StartOptionsPage);
+            proceedButton.MoveTo(new(0f, -300f));
 
             titleLabel = new(startPage, string.Empty);
             titleLabel.MoveTo(new(0f, 300f));
@@ -128,8 +147,12 @@ namespace ItemChangerDataLoader
                 GUIUtility.systemCopyBuffer = string.Join(", ", hashLabels.Skip(1).Select(l => l.Text.text.Replace("\n", "")));
             };
             hashPanel = new VerticalItemPanel(startPage, new(700f, 300f), 60f, true, hashLabels.Cast<IMenuElement>().Append(copyHashButton).ToArray());
-            startButton.SymSetNeighbor(Neighbor.Up, hashPanel);
             startPage.backButton.SymSetNeighbor(Neighbor.Down, hashPanel);
+
+            redirectStartButton = new BigButton(StartOptionsPage, "Start Normally");
+            redirectStartButton.OnClick += StartGame;
+
+            startOptionsPanel = new MultiGridItemPanel(StartOptionsPage, 5, 3, 150f, 650f, new Vector2(0, 300), Array.Empty<IMenuElement>());
 
             errorLabel = new(errorPage, string.Empty, MenuLabel.Style.Body);
             errorLabel.Text.color = Color.red;
@@ -202,9 +225,9 @@ namespace ItemChangerDataLoader
                 {
                     data = new()
                     {
-                        pack = pack,
-                        settings = s,
-                        ctx = ctx,
+                        Pack = pack,
+                        Settings = s,
+                        CTX = ctx,
                     };
 
                     titleLabel.Text.text = pack.Name;
@@ -222,50 +245,25 @@ namespace ItemChangerDataLoader
                     }
 
                     startPage.Show();
-                    startButton.Button.Select();
+
+                    BigButton nextButton;
+                    if (RebuildStartOptionsPanel())
+                    {
+                        startButton.Hide();
+                        nextButton = proceedButton;
+                    }
+                    else
+                    {
+                        proceedButton.Hide();
+                        nextButton = startButton;
+                    }
+                    nextButton.Show();
+                    nextButton.MoveTo(new(0f, -300f));
+                    startPage.backButton.SymSetNeighbor(Neighbor.Up, nextButton);
+                    hashPanel.SymSetNeighbor(Neighbor.Down, nextButton);
                 }
             }
             
-        }
-
-
-        public void ApplySettings(ICSettings settings)
-        {
-            ItemChangerMod.CreateSettingsProfile(settings);
-        }
-
-        public void ApplySettings(ICSettings settings, RandoModContext ctx)
-        {
-            typeof(RandomizerMod.RandomizerMod)
-                .GetProperty(nameof(RandomizerMod.RandomizerMod.RS), BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
-                .SetValue(null, new RandomizerSettings
-                {
-                    GenerationSettings = ctx.GenerationSettings,
-                    Context = ctx,
-                    ProfileID = GameManager.instance.profileID,
-                    TrackerData = new() { AllowSequenceBreaks = true, logFileName = "TrackerDataDebugHistory.txt", },
-                    TrackerDataWithoutSequenceBreaks = new() { AllowSequenceBreaks = false, logFileName = "TrackerDataWithoutSequenceBreaksDebugHistory.txt", }
-                });
-
-            ItemChangerMod.CreateSettingsProfile(settings);
-
-            typeof(LogManager)
-                .GetMethod("WriteLogs", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
-                .Invoke(null, new object[]
-                {
-                    new LogArguments
-                    {
-                        ctx = ctx,
-                        gs = ctx.GenerationSettings,
-                        randomizer = null
-                    }
-                });
-            LogManager.Write(tw => JsonUtil.Serialize(tw, ctx), "RawSpoiler.json");
-            RandomizerMod.RandomizerMod.RS.TrackerData.Setup(ctx.GenerationSettings, ctx);
-            RandomizerMod.RandomizerMod.RS.TrackerDataWithoutSequenceBreaks.Setup(ctx.GenerationSettings, ctx);
-            ((MenuChangerMod)typeof(MenuChangerMod).GetProperty("instance", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
-                .GetValue(null))
-                .Settings.resumeKey = "Randomizer";
         }
 
         public void StartGame()
@@ -273,12 +271,11 @@ namespace ItemChangerDataLoader
             MenuChangerMod.HideAllMenuPages();
             try
             {
-                if (data.pack.SupportsRandoTracking) ApplySettings(data.settings, data.ctx);
-                else ApplySettings(data.settings);
+                data.ApplySettings();
             }
             catch (Exception e)
             {
-                ICDLMod.Instance.LogError($"Error applying loaded data from pack {data?.pack?.Name}:\n{e}");
+                ICDLMod.Instance.LogError($"Error applying loaded data from pack {data?.Pack?.Name}:\n{e}");
                 errorLabel.Text.text = Localize("Error applying loaded data.\nSee ModLog for details.");
                 errorPage.Show();
                 return;
@@ -288,12 +285,82 @@ namespace ItemChangerDataLoader
             GameManager.instance.StartNewGame();
         }
 
-        private class StartData
+        public class StartData
         {
-            public ICPack pack;
-            public ICSettings settings;
-            public RandoModContext ctx;
+            public ICPack Pack { get; init; }
+            public ICSettings Settings { get; init; }
+            public RandoModContext? CTX { get; init; }
+
+            /// <summary>
+            /// Applies the ICSettings to the save. If the pack supports rando tracking, also creates rando save data and applies the CTX.
+            /// </summary>
+            public void ApplySettings()
+            {
+                if (!Pack.SupportsRandoTracking)
+                {
+                    ItemChangerMod.CreateSettingsProfile(Settings);
+                    return;
+                }
+                else
+                {
+                    typeof(RandomizerMod.RandomizerMod)
+                        .GetProperty(nameof(RandomizerMod.RandomizerMod.RS), BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+                        .SetValue(null, new RandomizerSettings
+                        {
+                            GenerationSettings = CTX.GenerationSettings,
+                            Context = CTX,
+                            ProfileID = GameManager.instance.profileID,
+                            TrackerData = new() { AllowSequenceBreaks = true, logFileName = "TrackerDataDebugHistory.txt", },
+                            TrackerDataWithoutSequenceBreaks = new() { AllowSequenceBreaks = false, logFileName = "TrackerDataWithoutSequenceBreaksDebugHistory.txt", }
+                        });
+
+                    ItemChangerMod.CreateSettingsProfile(Settings);
+
+                    typeof(LogManager)
+                        .GetMethod("WriteLogs", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+                        .Invoke(null, new object[]
+                        {
+                            new LogArguments
+                            {
+                                ctx = CTX,
+                                gs = CTX.GenerationSettings,
+                                randomizer = null
+                            }
+                        });
+
+                    LogManager.Write(tw => JsonUtil.Serialize(tw, CTX), "RawSpoiler.json");
+                    RandomizerMod.RandomizerMod.RS.TrackerData.Setup(CTX.GenerationSettings, CTX);
+                    RandomizerMod.RandomizerMod.RS.TrackerDataWithoutSequenceBreaks.Setup(CTX.GenerationSettings, CTX);
+                    ((MenuChangerMod)typeof(MenuChangerMod).GetProperty("instance", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+                        .GetValue(null))
+                        .Settings.resumeKey = "Randomizer";
+                    return;
+                }
+            }
         }
 
+        /// <summary>
+        /// Polls each subscriber to RandoStartOverride to build the PostGenerationRedirectPage. Returns true if any subscriber returns true.
+        /// <br/>If this returns true, the Proceed button will be used after rando generation. Otherwise, the Start Game button will be used.
+        /// </summary>
+        public bool RebuildStartOptionsPanel()
+        {
+            if (!ICDLModeMenuConstructor.Finished) return false;
+
+            List<BaseButton> buttons = new();
+            buttons.Add(redirectStartButton);
+            foreach (var entry in ICDLMenuAPI.startOverrides)
+            {
+                if (entry.StartHandler(data, StartOptionsPage, out BaseButton button))
+                {
+                    buttons.Add(button);
+                }
+            }
+            if (buttons.Count < 2) return false;
+
+            startOptionsPanel.Clear();
+            startOptionsPanel.AddRange(buttons);
+            return true;
+        }
     }
 }
