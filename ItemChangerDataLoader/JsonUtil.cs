@@ -19,6 +19,8 @@ namespace ItemChangerDataLoader
         {
             JsonSerializer js = new() { Formatting = Formatting.Indented, TypeNameHandling = TypeNameHandling.Auto, DefaultValueHandling = DefaultValueHandling.Include, };
             js.Converters.Add(new StringEnumConverter());
+            js.Converters.Add(new ItemChanger.TaggableObject.TagListSerializer() { RemoveNewProfileTags = true });
+            js.Converters.Add(new ItemChanger.Internal.ModuleCollection.ModuleListSerializer() { RemoveNewProfileModules = true });
             using FileStream fs = new(filepath, FileMode.Create, FileAccess.Write);
             using StreamWriter sw = new(fs);
             sw.NewLine = "\r\n";
