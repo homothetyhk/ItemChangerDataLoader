@@ -12,6 +12,7 @@ using System.Threading;
 using UnityEngine;
 using ICSettings = ItemChanger.Settings;
 using static RandomizerMod.Localization;
+using System.Diagnostics;
 
 namespace ItemChangerDataLoader
 {
@@ -158,7 +159,9 @@ namespace ItemChangerDataLoader
             errorLabel.Text.color = Color.red;
             errorLabel.MoveTo(new(-100f, 0f));
             modlogButton = new(errorPage, Localize("Open ModLog"));
+            modlogButton.OnClick += () => Process.Start(Path.Combine(Application.persistentDataPath, "ModLog.txt"));
             openFolderButton = new(errorPage, Localize("Browse Files"));
+            openFolderButton.OnClick += () => Process.Start(ICDLMod.ICDLDirectory);
             new VerticalItemPanel(errorPage, new(400f, 50f), 100f, true, modlogButton, openFolderButton);
         }
 
@@ -187,6 +190,17 @@ namespace ItemChangerDataLoader
                 {
                     s = null;
                     ICDLMod.Instance.LogError($"Error deserializing ic.json for pack {pack.Name}:\n{e}");
+                    
+                    if (TryExtractMissingAssemblyError(e, out string assembly))
+                    {   
+                        errorLabel.Text.text = Localize("Error loading ItemChanger data from ic.json.") + "\n" + assembly + Localize(" may be missing or have the wrong version.");
+                    }
+                    else
+                    {
+                        errorLabel.Text.text = Localize("Error loading ItemChanger data from ic.json.") + "\n" + Localize("See ModLog for details.");
+                    }
+                    errorPage.Show();
+
                     return;
                 }
                 if (pack.SupportsRandoTracking)
@@ -199,6 +213,16 @@ namespace ItemChangerDataLoader
                     {
                         s = null;
                         ICDLMod.Instance.LogError($"Error deserializing ctx.json for pack {pack.Name}:\n{e}");
+                        if (TryExtractMissingAssemblyError(e, out string assembly))
+                        {
+                            errorLabel.Text.text = Localize($"Error deserializing ctx.json for pack {pack.Name}.") + "\n" + assembly + Localize(" may be missing or have the wrong version.");
+                        }
+                        else
+                        {
+                            errorLabel.Text.text = Localize($"Error deserializing ctx.json for pack {pack.Name}.") + "\n" + Localize("See ModLog for details.");
+                        }
+                        errorPage.Show();
+
                         return;
                     }
                 }
@@ -371,6 +395,24 @@ namespace ItemChangerDataLoader
             startOptionsPanel.Clear();
             startOptionsPanel.AddRange(buttons);
             return true;
+        }
+
+        private bool TryExtractMissingAssemblyError(Exception e, out string missingAssembly)
+        {
+            try
+            {
+                string message = e.Message;
+                const string prefix = "Error resolving type specified in JSON ";
+
+                if (message.StartsWith(prefix))
+                {
+                    missingAssembly = message.Split('\'')[1].Split(',')[1].Trim();
+                    return true;
+                }
+            }
+            catch { }
+            missingAssembly = null;
+            return false;
         }
     }
 }
