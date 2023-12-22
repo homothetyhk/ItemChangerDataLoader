@@ -233,12 +233,7 @@ namespace ItemChangerDataLoader
                     titleLabel.Text.text = pack.Name;
                     descriptionLabel.Text.text = pack.Description;
 
-                    using FileStream fs = new(Path.Combine(pack._directory, "ic.json"), FileMode.Open, FileAccess.Read);
-                    using SHA256Managed sha256 = new();
-                    byte[] bytes = sha256.ComputeHash(fs);
-                    int seed = 17;
-                    for (int i = 0; i < bytes.Length; i++) seed = 31 * seed ^ bytes[i];
-                    string[] hash = RandomizerMod.Menu.Hash.GetHash(seed, hashLength);
+                    string[] hash = RandomizerMod.Menu.Hash.GetHash(data.Hash(), hashLength);
                     for (int i = 0; i < hashLength; i++)
                     {
                         hashLabels[i + 1].Text.text = Localize(hash[i]);
@@ -290,6 +285,21 @@ namespace ItemChangerDataLoader
             public ICPack Pack { get; init; }
             public ICSettings Settings { get; init; }
             public RandoModContext? CTX { get; init; }
+
+            /// <summary>
+            /// Computes a deterministic hash from the pack json.
+            /// </summary>
+            /// <returns>int32 hash value</returns>
+            public int Hash()
+            {
+                using FileStream fs = new(Path.Combine(Pack._directory, "ic.json"), FileMode.Open, FileAccess.Read);
+                using SHA256Managed sha256 = new();
+                byte[] bytes = sha256.ComputeHash(fs);
+                int seed = 17;
+                for (int i = 0; i < bytes.Length; i++) seed = 31 * seed ^ bytes[i];
+
+                return seed;
+            }
 
             /// <summary>
             /// Applies the ICSettings to the save. If the pack supports rando tracking, also creates rando save data and applies the CTX.
