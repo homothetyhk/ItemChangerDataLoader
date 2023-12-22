@@ -4,14 +4,18 @@
     <TargetFramework>net472</TargetFramework>
     <RootNamespace>ItemChangerDataLoader</RootNamespace>
     <AssemblyName>ItemChangerDataLoader</AssemblyName>
-    <AssemblyVersion>1.1.1</AssemblyVersion>
-    <FileVersion>1.1.1</FileVersion>
+    <AssemblyVersion>1.1.2</AssemblyVersion>
+    <FileVersion>1.1.2</FileVersion>
     <Deterministic>true</Deterministic>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>true</ImplicitUsings>
     <Nullable>annotations</Nullable>
+    <HollowKnightRefs>C:\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed</HollowKnightRefs>
   </PropertyGroup>
+
+  <Import Project="LocalOverrides.targets" Condition="Exists('LocalOverrides.targets')" />
+  
   <ItemGroup>
     <Using Remove="System.Net.Http" />
     <Using Remove="System.Threading" />
@@ -19,41 +23,41 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(HollowKnightRefs)\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="ItemChanger">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\Mods\ItemChanger\ItemChanger.dll</HintPath>
+      <HintPath>$(HollowKnightRefs)\Mods\ItemChanger\ItemChanger.dll</HintPath>
     </Reference>
     <Reference Include="MenuChanger">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\Mods\MenuChanger\MenuChanger.dll</HintPath>
+      <HintPath>$(HollowKnightRefs)\Mods\MenuChanger\MenuChanger.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\Newtonsoft.Json.dll</HintPath>
+      <HintPath>$(HollowKnightRefs)\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="RandomizerMod">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\Mods\Randomizer 4\RandomizerMod.dll</HintPath>
+      <HintPath>$(HollowKnightRefs)\Mods\Randomizer 4\RandomizerMod.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>$(HollowKnightRefs)\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(HollowKnightRefs)\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+      <HintPath>$(HollowKnightRefs)\UnityEngine.IMGUIModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
+      <HintPath>$(HollowKnightRefs)\UnityEngine.TextRenderingModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <HintPath>$(HollowKnightRefs)\UnityEngine.UI.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UIModule">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\UnityEngine.UIModule.dll</HintPath>
+      <HintPath>$(HollowKnightRefs)\UnityEngine.UIModule.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Target Name="CopyMod" AfterTargets="PostBuildEvent">
-    <Copy SourceFiles="$(TargetPath);$(TargetDir)$(TargetName).pdb" DestinationFolder="C:\Program Files (x86)\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\Mods\$(TargetName)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(TargetPath);$(TargetDir)$(TargetName).pdb" DestinationFolder="$(HollowKnightRefs)\Mods\$(TargetName)" SkipUnchangedFiles="true" />
   </Target>
   <Target Name="ClearReferenceCopyLocalPaths" AfterTargets="ResolveAssemblyReferences">
     <ItemGroup>
