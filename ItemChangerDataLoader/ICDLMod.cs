@@ -65,7 +65,7 @@ namespace ItemChangerDataLoader
                 DirectoryInfo di = Directory.CreateDirectory(path);
                 string dir = di.FullName;
                 JsonUtil.Serialize(Path.Combine(dir, "ic.json"), s);
-                JsonUtil.Serialize(Path.Combine(dir, "ctx.json"), ctx);
+                JsonUtil.SerializeCTX(Path.Combine(dir, "ctx.json"), ctx);
                 JsonUtil.Serialize(Path.Combine(dir, "pack.json"), new ICPack
                 {
                     Name = ctx.GenerationSettings.Seed.ToString(),

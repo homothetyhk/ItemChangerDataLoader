@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using RandomizerMod.RC;
 
 namespace ItemChangerDataLoader
 {
@@ -13,6 +14,16 @@ namespace ItemChangerDataLoader
             using StreamReader sr = new(fs);
             using JsonTextReader jtr = new(sr);
             return js.Deserialize<T>(jtr);
+        }
+
+        public static RandoModContext DeserializeCTX(string filepath)
+        {
+            return RandomizerCore.Json.JsonUtil.DeserializeFromFile<RandoModContext>(filepath);
+        }
+
+        public static void SerializeCTX(string filepath, RandoModContext ctx)
+        {
+            RandomizerCore.Json.JsonUtil.SerializeToFile(filepath, ctx);
         }
 
         public static void Serialize(string filepath, object o)
