@@ -26,6 +26,11 @@ namespace ItemChangerDataLoader
             RandomizerCore.Json.JsonUtil.SerializeToFile(filepath, ctx);
         }
 
+        public static void SerializeCTX(TextWriter tw, RandoModContext ctx)
+        {
+            RandomizerCore.Json.JsonUtil.GetNonLogicSerializer().Serialize(tw, ctx);
+        }
+
         public static void Serialize(string filepath, object o)
         {
             JsonSerializer js = new() { Formatting = Formatting.Indented, TypeNameHandling = TypeNameHandling.Auto, DefaultValueHandling = DefaultValueHandling.Include, };

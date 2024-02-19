@@ -72,7 +72,7 @@ namespace ItemChangerDataLoader
                             }
                         });
 
-                    LogManager.Write(tw => JsonUtil.Serialize(tw, CTX), "RawSpoiler.json");
+                    LogManager.Write(tw => JsonUtil.SerializeCTX(tw, CTX), "RawSpoiler.json");
                     RandomizerMod.RandomizerMod.RS.TrackerData.Setup(CTX.GenerationSettings, CTX);
                     RandomizerMod.RandomizerMod.RS.TrackerDataWithoutSequenceBreaks.Setup(CTX.GenerationSettings, CTX);
                     ((MenuChangerMod)typeof(MenuChangerMod).GetProperty("instance", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
