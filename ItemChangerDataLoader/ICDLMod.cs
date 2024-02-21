@@ -64,9 +64,9 @@ namespace ItemChangerDataLoader
 
                 DirectoryInfo di = Directory.CreateDirectory(path);
                 string dir = di.FullName;
-                JsonUtil.Serialize(Path.Combine(dir, "ic.json"), s);
+                JsonUtil.SerializeIC(Path.Combine(dir, "ic.json"), s);
                 JsonUtil.SerializeCTX(Path.Combine(dir, "ctx.json"), ctx);
-                JsonUtil.Serialize(Path.Combine(dir, "pack.json"), new ICPack
+                JsonUtil.SerializeIC(Path.Combine(dir, "pack.json"), new ICPack
                 {
                     Name = ctx.GenerationSettings.Seed.ToString(),
                     Author = $"RandomizerMod {RandomizerMod.RandomizerMod.Version}, {DateTime.Now:yyyy-M-dd}",

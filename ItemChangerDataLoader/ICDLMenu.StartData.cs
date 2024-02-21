@@ -91,7 +91,7 @@ namespace ItemChangerDataLoader
 
                 try
                 {
-                    s = JsonUtil.Deserialize<ICSettings>(Path.Combine(pack._directory, "ic.json"));
+                    s = JsonUtil.DeserializeIC<ICSettings>(Path.Combine(pack._directory, "ic.json"));
                 }
                 catch (Exception e)
                 {

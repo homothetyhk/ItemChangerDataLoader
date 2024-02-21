@@ -11,7 +11,7 @@ namespace ItemChangerDataLoader
         {
             try
             {
-                ICPack pack = JsonUtil.Deserialize<ICPack>(filePath);
+                ICPack pack = JsonUtil.DeserializeIC<ICPack>(filePath);
                 pack._directory = Path.GetDirectoryName(filePath);
                 return pack;
             }
